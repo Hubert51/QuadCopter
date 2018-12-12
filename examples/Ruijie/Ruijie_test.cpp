@@ -874,9 +874,13 @@ void test_optial_flow(){
         cvtColor(nextFrame, nextFrame, CV_BGR2GRAY);
         
         Point2f point;
+        double timer = (double)getTickCount();
+
         point = optical_flow(prevFrame, nextFrame) ;
 
         prevFrame = nextFrame;
+        float fps = getTickFrequency() / ((double)getTickCount() - timer);
+        cout << "fps is " << fps << endl;
         // nextFrame = NULL;
     }
 
