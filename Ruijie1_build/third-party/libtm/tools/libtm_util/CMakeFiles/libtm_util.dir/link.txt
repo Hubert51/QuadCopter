@@ -1,0 +1,1 @@
+/usr/bin/c++    -pthread -fPIC -pedantic -g -Wno-missing-field-initializers -Wno-switch -Wno-multichar -Wsequence-point -Wformat-security -mssse3 -std=c++11 -std=c++11 -fPIC   CMakeFiles/libtm_util.dir/libtm_util.cpp.o  -o libtm_util -rdynamic ../../libtm/src/libtm.a -lusb-1.0 

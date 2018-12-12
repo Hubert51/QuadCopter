@@ -1,0 +1,1 @@
+/usr/bin/cc     CMakeFiles/rs-depth.dir/rs-depth.c.o  -o rs-depth -rdynamic -lrealsense2 -lm 

@@ -1,0 +1,1 @@
+/usr/bin/cc   -pthread   -fPIC -pedantic -g -D_BSD_SOURCE   -mssse3   CMakeFiles/rs-color.dir/rs-color.c.o  -o rs-color -rdynamic ../../../librealsense2.so.2.16.3 -lGLU -lGL -lm -lglfw -lusb-1.0 -Wl,-rpath,/home/ruijie/Desktop/librealsense-master/Ruijie1_build: 

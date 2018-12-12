@@ -1,0 +1,1 @@
+/usr/bin/cc     CMakeFiles/rs-color.dir/rs-color.c.o  -o rs-color -rdynamic -lrealsense2 -lm 
