@@ -192,6 +192,7 @@ int main(int argc, char **argv)
 
 #include <librealsense2/rs.hpp> // Include RealSense Cross Platform AP
 #include "../wrappers/opencv/cv-helpers.hpp"
+#include "helper.hpp"
 
 #include <unistd.h>
 #include <time.h>
@@ -583,6 +584,7 @@ void frame_to_mat(const rs2::frame& f, Mat &color_mat )
 
 
 int main_func(){
+
     // test_code();
     struct sigaction sa;
     memset(&sa, 0, sizeof(struct sigaction));
@@ -846,22 +848,59 @@ void segfault_sigaction(int signal, siginfo_t *si, void *arg)
 }
 
 
+void test_optial_flow(){
+    rs2::pipeline pipe;
+    auto config = pipe.start();
+    auto profile = config.get_stream(RS2_STREAM_COLOR)
+                         .as<video_stream_profile>();
+    rs2::align align_to(RS2_STREAM_COLOR);
+    for (auto i = 0; i < 30; ++i) 
+        pipe.wait_for_frames();
+
+    rs2::frameset data = pipe.wait_for_frames(); // Wait for next set of frames from the camera
+    data = align_to.process(data);
+    rs2::frame color_frame = data.get_color_frame();
+    Mat prevFrame, nextFrame;
+    frame_to_mat(color_frame, prevFrame);
+    cvtColor(prevFrame, prevFrame, CV_BGR2GRAY);
+
+
+    while(1){
+        data = pipe.wait_for_frames();
+        // Make sure the frames are spatially aligned
+        data = align_to.process(data);
+        color_frame = data.get_color_frame(); 
+        frame_to_mat(color_frame, nextFrame);
+        cvtColor(nextFrame, nextFrame, CV_BGR2GRAY);
+        
+        Point2f point;
+        point = optical_flow(prevFrame, nextFrame) ;
+
+        prevFrame = nextFrame;
+        // nextFrame = NULL;
+    }
+
+}
+
+
 
 
 /** @function main */
 int main( int argc, char** argv )
 {
+    rs2::context ctx;
+    auto list = ctx.query_devices();
+    rs2::device dev=list[0];
+    dev.hardware_reset();
+    sleep(5);
+    test_optial_flow();
     if( argc != 3 ) 
     { 
         cout << "error input, should use ./Ruijie_test img1  img2" << endl;
         return -1; 
     } 
 
-    rs2::context ctx;
-    auto list = ctx.query_devices();
-    rs2::device dev=list[0];
-    dev.hardware_reset();
-    sleep(5);
+
 
     img1_name = argv[1];
     img2_name = argv[2];
