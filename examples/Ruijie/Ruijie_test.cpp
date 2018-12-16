@@ -757,7 +757,7 @@ int main_func(){
                     if(color_mat.rows==0 || color_mat.cols==0){
                         cout << "1111111111111111111" << endl;
                         ok = 0;
-                    }
+                    }   
                     else
                         ok = tracker->update(color_mat, bbox);
                 }
@@ -945,10 +945,12 @@ int object_detection(){
     int counter = 0;
     vector<Mat> spl;
 
-    VideoWriter video("outcpp.avi",-1, 10, Size(640,480));
+    VideoWriter video("output1.avi",0, 10, Size(640,480));
+      // VideoWriter video("outcpp.avi",CV_FOURCC('M','J','P','G'),10, Size(640,480)); 
+
 
     int i = 0;
-    while(i < 100)
+    while(i < 10)
     {
         counter += 1;
         data = pipe.wait_for_frames();
@@ -980,7 +982,6 @@ int object_detection(){
         // ======================================================
         // USE OBJECT DETECTION TO TRACK THE OBJECT
         // ======================================================
-        Mat output_image;
         detect_object(scene_corners, img_object, color_mat);
 //        split(output_image, spl);                // process - extract only the correct channel
 //        for (int i =0; i < 3; ++i)
@@ -988,7 +989,15 @@ int object_detection(){
 //                spl[i] = Mat::zeros(S, spl[0].type());
 //        merge(spl, res);
         //outputVideo.write(res); //save or
-        video << output_image;
+        video.write(output_image);
+
+        imshow( "Frame", output_image);
+      
+        // Press  ESC on keyboard to  exit
+        char c = (char)waitKey(1);
+        if( c == 27 ) 
+          break;
+        
         cout << i << endl;
 
 
@@ -996,6 +1005,8 @@ int object_detection(){
 
         i++;
     }
+      // When everything done, release the video capture and write object
+    video.release();
 
     printf("time taken: %.2fs\n", (double) (clock() - tStart)/CLOCKS_PER_SEC);
     return 0;
