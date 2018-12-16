@@ -85,6 +85,9 @@ add_subdirectory(record-playback)
 add_subdirectory(Ruijie)
 add_subdirectory(pose-estimation)
 add_subdirectory(optical_flow)
+add_subdirectory(test_helper)
+add_subdirectory(camera_calibration)
+
 
 find_package(OpenCV)
 include_directories( ${OpenCV_INCLUDE_DIRS} )

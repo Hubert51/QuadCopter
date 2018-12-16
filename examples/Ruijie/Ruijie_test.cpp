@@ -381,15 +381,19 @@ void readme();
 
 //     }
 // }
+
+// global variable
 int w;
 int h;
 char* img1_name;
 char* img2_name;
+Mat output_image;
+
 void segfault_sigaction(int signal, siginfo_t *si, void *arg);
 void frame_to_mat(const rs2::frame& f, Mat &color_mat );
 
 
-int detect_object(vector<Point2f>& scene_corners, Mat img_object, Mat img_scene){
+int detect_object(vector<Point2f>& scene_corners, Mat& img_object, Mat& img_scene){
 
     //-- Step 1: Detect the keypoints using SURF Detector
     int minHessian = 400;
@@ -496,9 +500,9 @@ int detect_object(vector<Point2f>& scene_corners, Mat img_object, Mat img_scene)
     line( img_matches, scene_corners[3] + Point2f( img_object.cols, 0), scene_corners[0] + Point2f( img_object.cols, 0), Scalar( 0, 255, 0), 4 );
 
     //-- Show detected matches
-    imshow( "Good Matches & Object detection", img_matches );
-
-    waitKey(1);
+//    imshow( "Good Matches & Object detection", img_matches );
+    output_image = img_matches;
+//    waitKey(1);
     return 1;
 }
 
@@ -887,28 +891,139 @@ void test_optial_flow(){
 }
 
 
+int object_detection(){
+    rs2::pipeline pipe;
+
+    auto img_object = imread( img1_name,0);
+    float src_angle = atan(img_object.rows / img_object.cols) * 180 / 3.14159;
+    cv::resize(img_object, img_object, cv::Size(), 0.15, 0.15);
+    if( !img_object.data )
+    {
+        std::cout<< " --(!) Error reading images " << std::endl;
+        return -1;
+    }
+
+    // =============== start the realsense ===========================
+    // Declare RealSense pipeline, encapsulating the actual device and sensors
+
+    // Start streaming with default recommended configuration
+    // pipe.start();
+    auto config = pipe.start();
+    auto profile = config.get_stream(RS2_STREAM_COLOR)
+            .as<video_stream_profile>();
+    rs2::align align_to(RS2_STREAM_COLOR);
+
+    for (auto i = 0; i < 30; ++i)
+        pipe.wait_for_frames();
+
+    rs2::frameset data = pipe.wait_for_frames(); // Wait for next set of frames from the camera
+    data = align_to.process(data);
+    rs2::frame color_frame = data.get_color_frame();
+    Mat color_mat;
+    frame_to_mat(color_frame, color_mat);
+
+    // =============================================================
+    // get the size of the frame:
+    auto vf = color_frame.as<video_frame>();
+    w = vf.get_width();
+    h = vf.get_height();
+    cout << string(30, '=') << endl;
+    cout << "width is " << w << "; height is " << h << endl;
+    cout << string(30, '=') << endl;
+    // =============================================================
+
+
+    // the function will output four four corners of the object inside the
+    // the scene frame
+    std::vector<Point2f> scene_corners(4);
+
+//    Rect2d bbox = Rect2d(0,0,0,0);
+//    find_object(pipe, color_frame, color_mat, scene_corners, img_object,align_to, bbox);
+
+    float angle;
+    clock_t tStart = clock();
+    int counter = 0;
+    vector<Mat> spl;
+
+    VideoWriter video("outcpp.avi",-1, 10, Size(640,480));
+
+    int i = 0;
+    while(i < 100)
+    {
+        counter += 1;
+        data = pipe.wait_for_frames();
+        // Make sure the frames are spatially aligned
+        data = align_to.process(data);
+
+        color_frame = data.get_color_frame();
+        auto depth_frame = data.get_depth_frame();
+
+
+        // auto sensor = pipe.get_device().first<rs2::depth_sensor>();
+        // auto scale = sensor.get_depth_scale();
+        // cout << "result " << scale << endl;
+
+        // If we only received new depth frame,
+        // but the color did not update, continue
+        // static int last_frame_number = 0;
+        // if (color_frame.get_frame_number() == last_frame_number) continue;
+        // last_frame_number = color_frame.get_frame_number();
+
+        // Convert RealSense frame to OpenCV matrix:
+        frame_to_mat(color_frame, color_mat);
+        // cv::resize(color_mat, color_mat, cv::Size(), 0.6, 0.6);
+        // Mat
+
+        // Start timer
+        double timer = (double)getTickCount();
+
+        // ======================================================
+        // USE OBJECT DETECTION TO TRACK THE OBJECT
+        // ======================================================
+        Mat output_image;
+        detect_object(scene_corners, img_object, color_mat);
+//        split(output_image, spl);                // process - extract only the correct channel
+//        for (int i =0; i < 3; ++i)
+//            if (i != channel)
+//                spl[i] = Mat::zeros(S, spl[0].type());
+//        merge(spl, res);
+        //outputVideo.write(res); //save or
+        video << output_image;
+        cout << i << endl;
+
+
+//        cout << "box's width "  << bbox.width << " box's height" << bbox.height << endl;
+
+        i++;
+    }
+
+    printf("time taken: %.2fs\n", (double) (clock() - tStart)/CLOCKS_PER_SEC);
+    return 0;
+}
+
+
 
 
 /** @function main */
 int main( int argc, char** argv )
 {
+    cout << 213 <<endl;
     rs2::context ctx;
     auto list = ctx.query_devices();
     rs2::device dev=list[0];
     dev.hardware_reset();
     sleep(5);
-    test_optial_flow();
+//    test_optial_flow();
     if( argc != 3 ) 
     { 
         cout << "error input, should use ./Ruijie_test img1  img2" << endl;
         return -1; 
     } 
 
-
-
     img1_name = argv[1];
     img2_name = argv[2];
-    main_func();
+//    main_func();
+    object_detection();
     return 0;
 }
 
